@@ -1,0 +1,1227 @@
+import { useState, useEffect, useRef } from "react";
+
+const fl = document.createElement("link");
+fl.rel = "stylesheet";
+fl.href = "https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap";
+document.head.appendChild(fl);
+
+const CSS = `
+:root {
+  --ink:#0a0d14; --ink2:#3a4055; --ink3:#8590a6; --paper:#fff;
+  --fog:#f5f7fc; --fog2:#eaedf5; --line:#e0e5f0;
+  --blue:#1d4ed8; --blue2:#1e40af; --blue-t:#eff6ff; --blue-m:#bfdbfe;
+  --indigo:#4f46e5; --indigo-t:#eef2ff;
+  --green:#059669; --green-t:#ecfdf5;
+  --amber:#d97706; --amber-t:#fffbeb;
+  --red:#dc2626; --red-t:#fef2f2;
+  --purple:#7c3aed; --purple-t:#f5f3ff;
+  --teal:#0d9488; --teal-t:#f0fdfa;
+  --r:12px; --r2:8px;
+  --sh:0 1px 3px rgba(10,13,20,.07),0 4px 14px rgba(10,13,20,.05);
+  --sh2:0 8px 30px rgba(10,13,20,.10),0 2px 8px rgba(10,13,20,.05);
+  --sh3:0 20px 60px rgba(10,13,20,.12),0 6px 20px rgba(10,13,20,.06);
+  --fh:'Sora',sans-serif; --fb:'DM Sans',sans-serif; --fm:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--fog);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:var(--fog);} ::-webkit-scrollbar-thumb{background:var(--fog2);border-radius:4px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+@keyframes dots{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.fu{animation:fadeUp .45s cubic-bezier(.22,1,.36,1) both;}
+.fi{animation:fadeIn .3s ease both;}
+.pop{animation:pop .4s cubic-bezier(.22,1,.36,1) both;}
+.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:300;height:58px;padding:0 18px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.brand{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0;}
+.brand-logo{width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--blue),var(--indigo));
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:0 3px 10px rgba(29,78,216,.35);}
+.brand-name{font-family:var(--fh);font-weight:800;font-size:.98rem;color:var(--ink);}
+.brand-name b{color:var(--blue);}
+.brand-tag{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--indigo);background:var(--indigo-t);border:1px solid #c7d2fe;
+  padding:2px 7px;border-radius:99px;margin-left:4px;}
+.topnav{display:flex;gap:1px;}
+.tnav{font-size:.76rem;font-weight:600;padding:5px 11px;border-radius:7px;
+  border:none;background:transparent;color:var(--ink3);cursor:pointer;transition:all .15s;}
+.tnav:hover{background:var(--fog);color:var(--ink);}
+.tnav.on{background:var(--blue-t);color:var(--blue);}
+.nav-right{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+.cur-badge{font-size:.68rem;font-weight:700;padding:4px 9px;border-radius:7px;
+  background:var(--fog);border:1px solid var(--line);color:var(--ink3);}
+.nav-cta{font-family:var(--fh);font-size:.76rem;font-weight:700;padding:7px 16px;
+  border-radius:8px;border:none;background:var(--blue);color:#fff;cursor:pointer;
+  transition:all .15s;box-shadow:0 2px 8px rgba(29,78,216,.3);}
+.nav-cta:hover{background:var(--blue2);box-shadow:0 4px 14px rgba(29,78,216,.4);}
+
+/* HERO */
+.hero{padding:68px 20px 56px;text-align:center;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#fff 0%,#eff6ff 45%,#eef2ff 100%);
+  border-bottom:1px solid var(--line);}
+.hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 70% 55% at 50% -5%,rgba(29,78,216,.07),transparent);}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;
+  font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--blue);background:var(--blue-t);border:1px solid var(--blue-m);
+  padding:5px 13px;border-radius:99px;margin-bottom:20px;}
+.hero-h1{font-family:var(--fh);font-size:clamp(2rem,5vw,3.8rem);font-weight:800;
+  line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin-bottom:14px;}
+.hero-h1 .c1{color:var(--blue);}
+.hero-h1 .c2{color:var(--indigo);}
+.hero-p{font-size:clamp(.9rem,1.8vw,1.08rem);color:var(--ink2);max-width:560px;
+  margin:0 auto 28px;line-height:1.75;}
+.hero-search-wrap{max-width:660px;margin:0 auto 28px;position:relative;}
+.hero-search{width:100%;padding:16px 130px 16px 20px;font-family:var(--fb);
+  font-size:.95rem;color:var(--ink);background:#fff;
+  border:2px solid var(--line);border-radius:14px;outline:none;
+  box-shadow:var(--sh2);transition:all .2s;}
+.hero-search:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(29,78,216,.1),var(--sh2);}
+.hero-search::placeholder{color:var(--ink3);}
+.hero-go{position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  font-family:var(--fh);font-size:.78rem;font-weight:700;padding:9px 18px;
+  background:var(--blue);color:#fff;border:none;border-radius:9px;cursor:pointer;transition:all .15s;}
+.hero-go:hover{background:var(--blue2);}
+.cat-pills{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;}
+.cat-pill{display:flex;align-items:center;gap:5px;padding:7px 14px;
+  background:#fff;border:1.5px solid var(--line);border-radius:99px;
+  font-size:.8rem;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .18s;
+  box-shadow:var(--sh);}
+.cat-pill:hover{border-color:var(--blue-m);color:var(--blue);transform:translateY(-2px);box-shadow:var(--sh2);}
+.cat-pill.on{border-color:var(--blue);color:var(--blue);background:var(--blue-t);}
+.trust-row{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;}
+.trust-it{font-size:.78rem;color:var(--ink3);display:flex;align-items:center;gap:5px;font-weight:500;}
+.trust-it strong{color:var(--ink);}
+
+/* PAGE WRAP */
+.pw{max-width:1100px;margin:0 auto;padding:28px 18px 60px;}
+.sec-ey{font-size:.66rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:4px;}
+.sec-t{font-family:var(--fh);font-size:clamp(1.4rem,2.8vw,2rem);font-weight:800;color:var(--ink);margin-bottom:6px;letter-spacing:-.01em;}
+.sec-s{font-size:.9rem;color:var(--ink2);line-height:1.7;max-width:500px;}
+
+/* CARDS */
+.card{background:#fff;border:1.5px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);}
+.cp{padding:20px;}
+
+/* BUTTONS */
+.btn{font-family:var(--fb);font-weight:700;border:none;cursor:pointer;transition:all .18s;
+  display:inline-flex;align-items:center;gap:6px;border-radius:var(--r2);}
+.btn-blue{background:var(--blue);color:#fff;padding:10px 20px;font-size:.86rem;
+  box-shadow:0 2px 8px rgba(29,78,216,.3);}
+.btn-blue:hover{background:var(--blue2);box-shadow:0 4px 16px rgba(29,78,216,.4);transform:translateY(-1px);}
+.btn-green{background:var(--green);color:#fff;padding:10px 20px;font-size:.86rem;}
+.btn-green:hover{background:#047857;transform:translateY(-1px);}
+.btn-ghost{background:transparent;color:var(--ink2);padding:9px 16px;font-size:.83rem;border:1.5px solid var(--line);}
+.btn-ghost:hover{background:var(--fog);color:var(--ink);}
+.btn-indigo{background:var(--indigo);color:#fff;padding:10px 20px;font-size:.86rem;}
+.btn-indigo:hover{background:#4338ca;transform:translateY(-1px);}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none!important;}
+
+/* FORM */
+.fl{display:block;font-size:.78rem;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.fi2{width:100%;padding:9px 12px;background:#fff;border:1.5px solid var(--line);
+  border-radius:var(--r2);font-family:var(--fb);font-size:.87rem;color:var(--ink);
+  outline:none;transition:all .18s;}
+.fi2:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+.fi2::placeholder{color:var(--ink3);}
+.fg{margin-bottom:12px;}
+.fta{min-height:80px;resize:vertical;line-height:1.6;}
+
+/* FLUX AI CHAT */
+.flux-chat{display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;
+  border:1.5px solid var(--line);background:#fff;box-shadow:var(--sh);}
+.flux-chat-header{padding:12px 16px;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(90deg,#eff6ff,#eef2ff);border-bottom:1px solid var(--line);}
+.flux-ai-avatar{width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--blue),var(--indigo));
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.flux-ai-name{font-family:var(--fh);font-weight:800;font-size:.88rem;color:var(--ink);}
+.flux-ai-status{font-size:.65rem;font-weight:700;color:var(--green);}
+.flux-ai-model{font-size:.6rem;color:var(--ink3);font-family:var(--fm);
+  background:var(--fog);padding:2px 7px;border-radius:5px;border:1px solid var(--line);}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;
+  gap:10px;min-height:280px;max-height:440px;}
+.msg{padding:11px 14px;border-radius:12px;font-size:.87rem;line-height:1.68;max-width:90%;}
+.msg.user{background:linear-gradient(135deg,var(--blue),var(--indigo));
+  color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.msg.ai{background:var(--fog);border:1.5px solid var(--line);
+  align-self:flex-start;border-bottom-left-radius:3px;color:var(--ink);}
+.msg-head{font-size:.62rem;font-weight:800;color:var(--blue);letter-spacing:.07em;margin-bottom:4px;
+  display:flex;align-items:center;gap:5px;}
+.typing{display:flex;align-items:center;gap:4px;padding:10px 13px;
+  background:var(--fog);border:1.5px solid var(--line);border-radius:12px;
+  align-self:flex-start;border-bottom-left-radius:3px;}
+.td{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:dots 1.3s ease infinite;}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+.chips-row{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;
+  border-top:1px solid var(--line);background:var(--fog);}
+.chip{font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:99px;
+  border:1.5px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t);}
+.chat-irow{display:flex;gap:7px;padding:10px;border-top:1px solid var(--line);}
+.chat-field{flex:1;padding:9px 13px;background:var(--fog);border:1.5px solid var(--line);
+  border-radius:9px;font-family:var(--fb);font-size:.86rem;color:var(--ink);outline:none;transition:border .18s;}
+.chat-field:focus{border-color:var(--blue);background:#fff;}
+
+/* TOOLS GRID */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px;}
+.tool-card{background:#fff;border:1.5px solid var(--line);border-radius:var(--r);padding:17px;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.tool-card:hover{border-color:var(--blue-m);box-shadow:var(--sh2);transform:translateY(-3px);}
+.tool-card.on{border-color:var(--blue);background:var(--blue-t);}
+.tc-em{font-size:1.7rem;margin-bottom:9px;display:block;}
+.tc-n{font-weight:700;font-size:.86rem;color:var(--ink);margin-bottom:2px;}
+.tc-d{font-size:.73rem;color:var(--ink3);line-height:1.5;}
+.tc-b{position:absolute;top:9px;right:9px;font-size:.55rem;font-weight:700;
+  padding:2px 6px;border-radius:99px;}
+
+/* SKILL CARDS */
+.skill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.skill-card{background:#fff;border:1.5px solid var(--line);border-radius:var(--r);padding:20px;
+  transition:all .2s;position:relative;overflow:hidden;}
+.skill-card:hover{border-color:var(--blue-m);box-shadow:var(--sh2);transform:translateY(-2px);}
+.skill-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.skill-card.blue::before{background:linear-gradient(90deg,var(--blue),var(--indigo));}
+.skill-card.green::before{background:linear-gradient(90deg,var(--green),var(--teal));}
+.skill-card.amber::before{background:linear-gradient(90deg,var(--amber),#f59e0b);}
+.skill-card.purple::before{background:linear-gradient(90deg,var(--purple),var(--indigo));}
+.skill-card.teal::before{background:linear-gradient(90deg,var(--teal),var(--green));}
+.skill-card.red::before{background:linear-gradient(90deg,var(--red),#f97316);}
+.sk-icon{font-size:1.8rem;margin-bottom:10px;}
+.sk-name{font-family:var(--fh);font-weight:800;font-size:.95rem;color:var(--ink);margin-bottom:4px;}
+.sk-desc{font-size:.8rem;color:var(--ink2);line-height:1.6;margin-bottom:10px;}
+.sk-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.sk-tag{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:99px;
+  background:var(--fog);color:var(--ink3);border:1px solid var(--line);}
+
+/* DIAGNOSE */
+.diag-wrap{display:flex;flex-direction:column;gap:16px;}
+.diag-input-card{background:#fff;border:1.5px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--sh);overflow:hidden;}
+.diag-top{padding:16px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,var(--fog),#fff);
+  display:flex;align-items:center;gap:10px;}
+.diag-icon{width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;}
+.diag-label{font-family:var(--fh);font-weight:800;font-size:1rem;color:var(--ink);}
+.diag-sub{font-size:.75rem;color:var(--ink3);}
+.sev-row{padding:14px 20px;background:var(--fog);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.sev-bar{flex:1;min-width:100px;height:8px;background:var(--fog2);border-radius:99px;overflow:hidden;}
+.sev-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.22,1,.36,1);}
+.sev-val{font-family:var(--fm);font-size:.8rem;font-weight:600;min-width:30px;text-align:right;}
+.sbadge{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;
+  padding:4px 10px;border-radius:99px;letter-spacing:.04em;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--line);border-radius:10px;padding:20px;text-align:center;
+  cursor:pointer;transition:all .18s;background:var(--fog);}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-t);}
+.upload-preview{border:1.5px solid var(--blue-m);border-radius:10px;padding:12px 14px;
+  background:var(--blue-t);display:flex;align-items:center;gap:12px;}
+
+/* WHY-WHY */
+.why-row{display:flex;gap:12px;margin-bottom:8px;}
+.why-n{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:.76rem;flex-shrink:0;margin-top:2px;}
+.why-body{flex:1;}
+.cause-box{padding:8px 12px;border-left:3px solid;border-radius:0 7px 7px 0;
+  font-size:.86rem;line-height:1.55;margin-bottom:5px;}
+.sol-box{padding:8px 12px;border-left:3px solid;border-radius:0 7px 7px 0;
+  font-size:.86rem;line-height:1.55;}
+.why-conn{width:2px;background:var(--fog2);height:8px;margin:0 0 0 15px;}
+
+/* FISH */
+.fish-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;}
+.fish-cell{padding:11px;border:1.5px solid var(--line);border-radius:9px;background:var(--fog);}
+.fish-head{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+.fish-pt{font-size:.8rem;color:var(--ink2);padding:3px 0;display:flex;gap:6px;line-height:1.45;}
+.fish-pt::before{content:'·';color:var(--ink3);font-weight:900;flex-shrink:0;}
+
+/* ACTIONS */
+.act-row{display:grid;grid-template-columns:1fr auto auto;gap:9px;
+  padding:9px 13px;border:1.5px solid var(--line);border-radius:9px;
+  background:var(--fog);margin-bottom:6px;align-items:start;}
+.act-text{font-size:.85rem;color:var(--ink);line-height:1.5;}
+.act-own{font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;}
+.act-dl{font-size:.65rem;color:var(--ink3);white-space:nowrap;font-family:var(--fm);padding-top:2px;}
+
+/* PM */
+.pm-shell{background:#fff;border:1.5px solid var(--line);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--sh);}
+.pm-tabs{display:flex;border-bottom:1px solid var(--line);}
+.pm-tab{flex:1;padding:12px;border:none;background:transparent;font-family:var(--fb);
+  font-weight:600;font-size:.8rem;color:var(--ink3);cursor:pointer;transition:all .15s;
+  border-bottom:2px solid transparent;}
+.pm-tab.on{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-t);}
+.pm-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--line);cursor:pointer;}
+.pm-chk{width:19px;height:19px;border:2px solid var(--line);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;margin-top:1px;}
+.pm-chk.dn{background:var(--green);border-color:var(--green);color:#fff;font-size:10px;}
+.pm-t{font-size:.85rem;color:var(--ink);line-height:1.5;}
+.pm-t.dn{text-decoration:line-through;color:var(--ink3);}
+.pm-m{font-size:.7rem;font-weight:600;color:var(--ink3);margin-top:2px;}
+.pm-prog-bar{height:5px;background:var(--fog2);border-radius:99px;overflow:hidden;margin:10px 0;}
+.pm-prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));
+  border-radius:99px;transition:width .6s;}
+
+/* CALCULATOR */
+.calc-res{text-align:center;padding:22px;
+  background:linear-gradient(135deg,var(--blue-t),var(--indigo-t));
+  border:1.5px solid var(--blue-m);border-radius:10px;margin-bottom:14px;}
+.calc-big{font-family:var(--fh);font-size:3rem;font-weight:800;color:var(--blue);line-height:1;}
+.calc-unit{font-size:1rem;color:var(--ink2);margin-left:5px;}
+.calc-note{font-size:.8rem;color:var(--ink2);margin-top:5px;}
+
+/* EMAIL */
+.etab{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.etab-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);
+  background:var(--fog);color:var(--ink2);font-size:.76rem;font-weight:600;
+  cursor:pointer;transition:all .15s;}
+.etab-btn.on{border-color:var(--blue);color:var(--blue);background:var(--blue-t);}
+.copy-btn{padding:4px 10px;border-radius:6px;border:1.5px solid var(--line);
+  background:var(--fog);color:var(--ink2);font-size:.7rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.copy-btn.copied{background:var(--green-t);border-color:#6ee7b7;color:var(--green);}
+
+/* TPM */
+.tpm-topic-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.tpm-topic-btn{padding:5px 11px;border-radius:7px;border:1.5px solid var(--line);
+  background:var(--fog);color:var(--ink2);font-size:.74rem;font-weight:600;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px;}
+.tpm-topic-btn:hover{border-color:var(--blue-m);color:var(--blue);}
+.tpm-sec-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;}
+.tpm-sec-tab{padding:6px 12px;border-radius:7px;border:1.5px solid var(--line);
+  background:var(--fog);color:var(--ink2);font-size:.76rem;font-weight:600;cursor:pointer;}
+.tpm-sec-tab.on{border-color:var(--blue);color:var(--blue);background:var(--blue-t);}
+
+/* PRICING */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.price-card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:26px;
+  position:relative;transition:all .2s;}
+.price-card:hover{box-shadow:var(--sh3);transform:translateY(-4px);}
+.price-card.pop{border-color:var(--blue);}
+.pop-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+  background:var(--blue);color:#fff;font-size:.62rem;font-weight:800;
+  padding:3px 14px;border-radius:99px;white-space:nowrap;}
+.p-tier{font-size:.65rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink3);margin-bottom:8px;}
+.p-amt{font-family:var(--fh);font-size:2.6rem;font-weight:800;color:var(--ink);line-height:1;}
+.p-per{font-size:.8rem;color:var(--ink3);}
+.p-orig{font-size:.72rem;color:var(--ink3);margin-top:2px;}
+.p-desc{font-size:.82rem;color:var(--ink2);margin:9px 0 16px;line-height:1.65;}
+.p-feat{font-size:.83rem;color:var(--ink);display:flex;gap:7px;margin-bottom:7px;
+  align-items:flex-start;line-height:1.5;}
+.p-feat::before{content:'✓';color:var(--green);font-weight:800;flex-shrink:0;margin-top:1px;}
+.pay-methods{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+.pay-m{font-size:.6rem;padding:2px 7px;border-radius:5px;
+  background:var(--fog);border:1px solid var(--line);color:var(--ink3);font-weight:600;}
+
+/* AD SLOT */
+.ad-slot{background:var(--fog);border:2px dashed var(--fog2);border-radius:var(--r);
+  padding:16px;text-align:center;margin:16px 0;}
+.ad-lbl{font-size:.62rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);}
+.ad-desc{font-size:.78rem;color:var(--ink3);margin-top:2px;}
+
+/* REPORT FOOTER */
+.rep-footer{padding:14px 20px;border-top:1px solid var(--line);background:var(--fog);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.rep-id{font-family:var(--fm);font-size:.62rem;color:var(--ink3);}
+
+/* SAFETY */
+.safety-box{padding:13px 15px;border:1.5px solid #fde68a;border-radius:10px;
+  background:var(--amber-t);display:flex;gap:11px;}
+.safety-text{font-size:.85rem;color:var(--ink);line-height:1.6;}
+
+@media(max-width:860px){
+  .fish-grid{grid-template-columns:1fr 1fr;}
+  .topnav{display:none;}
+  .act-row{grid-template-columns:1fr;}
+}
+@media(max-width:580px){
+  .fish-grid{grid-template-columns:1fr;}
+  .price-grid{grid-template-columns:1fr;}
+  .skill-grid{grid-template-columns:1fr;}
+}
+`;
+const se = document.createElement("style"); se.textContent = CSS; document.head.appendChild(se);
+
+// ── STATIC DATA ──────────────────────────────────────────────
+const CATS = [
+  {id:"electrical",e:"⚡",label:"Electrical",      c:"#d97706"},
+  {id:"plumbing",  e:"🔧",label:"Plumbing & Water",c:"#2563eb"},
+  {id:"internet",  e:"📶",label:"Internet / WiFi", c:"#7c3aed"},
+  {id:"appliance", e:"🔌",label:"Appliances",       c:"#dc2626"},
+  {id:"cctv",      e:"📹",label:"CCTV & Security",  c:"#0f172a"},
+  {id:"industrial",e:"🏭",label:"Industrial / PLC", c:"#059669"},
+  {id:"home",      e:"🏠",label:"Home Repair",      c:"#ea580c"},
+  {id:"ebmeter",   e:"🔋",label:"EB Meter / Power", c:"#ca8a04"},
+  {id:"office",    e:"💼",label:"Office / Work",    c:"#4f46e5"},
+];
+
+const CHIPS = {
+  electrical:["MCB keeps tripping","Power off in one room","High electricity bill","Earthing problem","Short circuit smell"],
+  plumbing:  ["Water pipe leaking","Tap not stopping","Low water pressure","Drain blocked","Tank not filling"],
+  internet:  ["WiFi very slow","Keeps disconnecting","Router not working","No signal after rain","Can't connect"],
+  appliance: ["Washing machine not spinning","Fridge not cooling","AC not working","Geyser no hot water","Fan not starting"],
+  cctv:      ["Camera black screen","DVR not recording","Night vision off","Camera offline","CCTV beeping"],
+  industrial:["PowerFlex F005 fault","Motor overload trip","PLC input flickering","Servo alarm","VFD fault code"],
+  home:      ["Ceiling fan wobbling","Door lock stuck","Roof leaking","Wall crack","Paint peeling"],
+  ebmeter:   ["How to read EB meter","Calculate electricity bill","Units consumed","Smart meter display","Bill too high"],
+  office:    ["Write a report","Make a presentation","Excel formula help","Send professional email","Automate my work"],
+};
+
+// FLUX AI SYSTEM PROMPT — never mentions Claude or Anthropic
+const FLUX_SYSTEM = `You are FLUX AI — a powerful, intelligent assistant built into FLUX DIGITAL (fluxdigitals.in). You were created by the FLUX DIGITAL team to help people worldwide.
+
+IMPORTANT: You are FLUX AI. Never mention Claude, Anthropic, or any other AI company. If asked who made you, say "I am FLUX AI, built by the FLUX DIGITAL team."
+
+You help with ALL of these:
+⚡ Electrical: MCB, wiring, EB meter, earthing, power cuts, bill calculation
+🔧 Plumbing: leaks, drains, pumps, pressure, tanks
+📶 Internet: WiFi, routers, broadband, speed issues
+🏭 Industrial: PLC (Allen-Bradley), VFD (PowerFlex), SCADA, servo drives, OEE, TPM, lean
+🔌 Appliances: AC, fridge, washing machine, geyser, fan
+📹 CCTV: cameras, DVR, night vision, recording
+🏠 Home repair: fans, walls, roofs, doors, painting
+🔋 EB Meter: reading, units, tariff, bill disputes
+💼 Office & Productivity:
+  - Write professional emails, letters, reports
+  - Create Excel formulas, data analysis guidance
+  - PowerPoint presentation structure and content
+  - Weekly/monthly report templates
+  - Work automation ideas and scripts
+  - Mail correction and proofreading
+  - Meeting agendas, minutes, project plans
+
+Always structure responses clearly with bold headers. Be friendly, practical, and speak simply for home users — technical for engineers.
+Never say you are Claude. You are FLUX AI.`;
+
+const CALC_LIST = [
+  {id:"ebill",  e:"🔋",n:"EB Bill Calc",    d:"Electricity cost",  b:"HOME",   bc:"#d97706"},
+  {id:"oee",    e:"📊",n:"OEE Calculator",  d:"Equipment eff.",    b:"INDUSTRY",bc:"#059669"},
+  {id:"motor",  e:"⚡",n:"Motor Current",   d:"Full load current", b:"ELECTRIC",bc:"#2563eb"},
+  {id:"cable",  e:"🔌",n:"Cable Size",      d:"Wire sizing",       b:"ELECTRIC",bc:"#2563eb"},
+  {id:"vdrop",  e:"📉",n:"Voltage Drop",    d:"Line drop calc",    b:"ELECTRIC",bc:"#2563eb"},
+  {id:"wifi",   e:"📶",n:"WiFi Signal",     d:"Coverage check",    b:"INTERNET",bc:"#7c3aed"},
+  {id:"pipe",   e:"💧",n:"Pipe Flow",       d:"Water flow rate",   b:"PLUMBING",bc:"#0d9488"},
+  {id:"rpm",    e:"🔄",n:"RPM / Speed",    d:"Motor speed",       b:"INDUSTRY",bc:"#059669"},
+  {id:"pneu",   e:"💨",n:"Pneumatic Force",d:"Cylinder thrust",   b:"INDUSTRY",bc:"#059669"},
+  {id:"downtime",e:"⏱",n:"Downtime/MTBF", d:"Availability",      b:"INDUSTRY",bc:"#059669"},
+  {id:"servo",  e:"🤖",n:"Servo Torque",   d:"Load torque",       b:"INDUSTRY",bc:"#059669"},
+  {id:"prodeff",e:"📈",n:"Prod Efficiency",d:"Planned vs actual", b:"INDUSTRY",bc:"#059669"},
+];
+const CALC_CFG = {
+  ebill:   {fields:[{k:"u",l:"Units Used (kWh)",ph:"150"},{k:"r",l:"Rate (₹/unit)",ph:"7.5"},{k:"f",l:"Fixed Charge (₹)",ph:"100"}],fn:v=>({val:((v.u||0)*(v.r||7.5)+(v.f||100)).toFixed(0),unit:"₹/month",note:`${v.u||0} units × ₹${v.r||7.5} + ₹${v.f||100} fixed`})},
+  oee:     {fields:[{k:"a",l:"Availability %",ph:"92"},{k:"p",l:"Performance %",ph:"88"},{k:"q",l:"Quality %",ph:"99"}],fn:v=>{const r=v.a/100*v.p/100*v.q/100*100;return{val:r.toFixed(1),unit:"%",note:r>=85?"✅ World Class":r>=65?"⚠️ Acceptable":"❌ Needs Improvement"}}},
+  motor:   {fields:[{k:"kw",l:"Power (kW)",ph:"7.5"},{k:"v",l:"Voltage (V)",ph:"415"},{k:"pf",l:"Power Factor",ph:"0.85"}],fn:v=>({val:((v.kw||0)*1000/(Math.sqrt(3)*(v.v||415)*(v.pf||0.85))).toFixed(2),unit:"A",note:`At ${v.v||415}V, PF=${v.pf||0.85}`})},
+  cable:   {fields:[{k:"i",l:"Current (A)",ph:"32"},{k:"l",l:"Length (m)",ph:"50"},{k:"vd",l:"Allowable Drop (V)",ph:"8"}],fn:v=>({val:(2*(v.i||0)*(v.l||0)*0.0175/(v.vd||8)).toFixed(2),unit:"mm²",note:"Copper @ 20°C"})},
+  vdrop:   {fields:[{k:"i",l:"Current (A)",ph:"25"},{k:"l",l:"Length (m)",ph:"80"},{k:"s",l:"Cable mm²",ph:"4"}],fn:v=>{const vd=2*(v.i||0)*(v.l||0)*0.0175/(v.s||4);return{val:vd.toFixed(2),unit:"V",note:vd>=20.75?"⚠️ Exceeds 5%":"✅ Within limit"}}},
+  wifi:    {fields:[{k:"tx",l:"TX Power (dBm)",ph:"20"},{k:"d",l:"Distance (m)",ph:"15"},{k:"w",l:"Walls",ph:"2"}],fn:v=>{const r=(v.tx||20)-(20*Math.log10(v.d||15)+20*Math.log10(2400)+4*(v.w||2)-147.55);return{val:r.toFixed(1),unit:"dBm",note:r>-60?"✅ Excellent":r>-75?"⚠️ Fair":"❌ Poor signal"}}},
+  pipe:    {fields:[{k:"d",l:"Diameter (mm)",ph:"25"},{k:"v",l:"Velocity (m/s)",ph:"1.5"}],fn:v=>({val:(Math.PI*(v.d/2/1000)**2*(v.v||1.5)*1000*60).toFixed(2),unit:"L/min",note:`${v.d||25}mm pipe`})},
+  rpm:     {fields:[{k:"f",l:"Frequency (Hz)",ph:"50"},{k:"p",l:"Poles",ph:"4"},{k:"s",l:"Slip %",ph:"3"}],fn:v=>{const ns=120*(v.f||50)/(v.p||4);return{val:(ns*(1-(v.s||3)/100)).toFixed(0),unit:"RPM",note:`Sync: ${ns.toFixed(0)} RPM`}}},
+  pneu:    {fields:[{k:"b",l:"Bore (mm)",ph:"80"},{k:"p",l:"Pressure (bar)",ph:"6"},{k:"e",l:"Efficiency %",ph:"90"}],fn:v=>({val:(Math.PI*(v.b/2)**2*(v.p||6)*0.1*(v.e||90)/100/1000).toFixed(3),unit:"kN",note:`${v.b||80}mm @ ${v.p||6}bar`})},
+  downtime:{fields:[{k:"h",l:"Operating Hours",ph:"720"},{k:"n",l:"Breakdowns",ph:"4"},{k:"r",l:"Repair Hours",ph:"12"}],fn:v=>{const m=((v.h||0)-(v.r||0))/(v.n||1);const mt=(v.r||0)/(v.n||1);return{val:(m/(m+mt)*100).toFixed(1),unit:"%",note:`MTBF:${m.toFixed(1)}h MTTR:${mt.toFixed(1)}h`}}},
+  servo:   {fields:[{k:"m",l:"Mass (kg)",ph:"15"},{k:"r",l:"Radius (m)",ph:"0.05"},{k:"a",l:"Accel m/s²",ph:"5"}],fn:v=>{const F=(v.m||0)*((v.a||0)+9.81*0.15);return{val:(F*(v.r||0.05)).toFixed(3),unit:"Nm",note:`Force: ${F.toFixed(1)}N`}}},
+  prodeff:{fields:[{k:"a",l:"Actual Output",ph:"920"},{k:"p",l:"Planned Output",ph:"1000"},{k:"r",l:"Rejected",ph:"18"}],fn:v=>({val:(((v.a||0)-(v.r||0))/(v.p||1)*100).toFixed(1),unit:"%",note:`Good: ${(v.a||0)-(v.r||0)} Reject: ${((v.r||0)/(v.a||1)*100).toFixed(1)}%`})},
+};
+
+const PM_DATA = {
+  daily:[
+    {id:"d1",m:"Electrical Panel",t:"Check MCB/ELCB — no trips, no burning smell"},
+    {id:"d2",m:"All Motors",t:"Check for unusual vibration or noise"},
+    {id:"d3",m:"VFD Panels",t:"Panel temperature normal, cooling fans running"},
+    {id:"d4",m:"Pneumatics",t:"Air pressure at all stations 5.5–6.5 bar"},
+    {id:"d5",m:"CCTV System",t:"All cameras online, DVR recording normally"},
+    {id:"d6",m:"Internet / Network",t:"Router online, all devices connected"},
+    {id:"d7",m:"EB Meter",t:"Read and record daily unit reading"},
+    {id:"d8",m:"Water System",t:"Overhead tank level OK, pump normal"},
+    {id:"d9",m:"PLC System",t:"PLC I/O LEDs all normal, no faults"},
+    {id:"d10",m:"Safety",t:"All emergency stops clear and functional"},
+  ],
+  weekly:[
+    {id:"w1",m:"All Motors",t:"Record bearing temperature with IR gun"},
+    {id:"w2",m:"VFD Filters",t:"Clean air filters, check terminal connections"},
+    {id:"w3",m:"PLC Battery",t:"Check backup battery voltage — must be >2.8V"},
+    {id:"w4",m:"Electrical",t:"Tighten all cable terminations in panels"},
+    {id:"w5",m:"Plumbing",t:"Check under-sink and overhead pipes for drips"},
+    {id:"w6",m:"CCTV Storage",t:"Check DVR storage — delete old footage if needed"},
+    {id:"w7",m:"WiFi Router",t:"Restart router, check for firmware updates"},
+    {id:"w8",m:"EB Meter",t:"Calculate weekly consumption, compare to last week"},
+    {id:"w9",m:"Earthing",t:"Check equipment earthing with continuity tester"},
+    {id:"w10",m:"Fire Safety",t:"Test smoke detectors and alarm system"},
+  ],
+  monthly:[
+    {id:"m1",m:"All Motors",t:"Megger insulation resistance test — must be >1MΩ"},
+    {id:"m2",m:"VFD Units",t:"Deep clean heat sinks — replace air filters"},
+    {id:"m3",m:"PLC Backup",t:"Full program backup — verify against master copy"},
+    {id:"m4",m:"Contactors",t:"Inspect contacts for burning or pitting"},
+    {id:"m5",m:"Home Electrical",t:"Test all ELCB/RCD safety devices"},
+    {id:"m6",m:"Water Pump",t:"Check motor winding resistance and impeller"},
+    {id:"m7",m:"CCTV Full",t:"Test night vision, motion detection, PTZ"},
+    {id:"m8",m:"EB Tracking",t:"Calculate monthly cost, compare to last month"},
+    {id:"m9",m:"Safety Systems",t:"Full test of all emergency stops and interlocks"},
+    {id:"m10",m:"Lubrication",t:"Grease all motor bearings per OEM schedule"},
+  ],
+};
+
+const SKILLS = [
+  {color:"blue",  icon:"📊",name:"Excel & Spreadsheets",    desc:"Formulas, pivot tables, charts, data analysis, automation macros — FLUX AI builds your Excel for you",tags:["Formulas","Pivot Table","Charts","VBA Macros","Data Analysis"]},
+  {color:"amber", icon:"📑",name:"PPT Presentations",       desc:"Slide structure, content writing, data slides, executive summaries — get presentation-ready content",tags:["Slide Structure","Content","Charts","Executive Summary","Design Guide"]},
+  {color:"green", icon:"📋",name:"Weekly & Monthly Reports",desc:"Auto-generate professional reports — production, maintenance, OEE, downtime, team performance reports",tags:["Production Report","OEE Report","Downtime","Team KPI","Executive Report"]},
+  {color:"purple",icon:"✉️",name:"Email Writing & Correction",desc:"Write professional emails, correct grammar, fix tone, translate to formal language — any email type",tags:["Complaint","Inquiry","Follow-up","Job Apply","Correction","Translation"]},
+  {color:"teal",  icon:"🤖",name:"Work Automation Ideas",   desc:"Automate repetitive tasks — data entry, report generation, file management, scheduling workflows",tags:["Task Automation","Data Entry","File Management","Scheduling","Workflow"]},
+  {color:"red",   icon:"📝",name:"Document Writing",         desc:"Formal letters, SOPs, maintenance manuals, safety procedures, work instructions — AI drafts them all",tags:["SOP Writing","Safety Procedure","Work Instruction","Letter","Manual"]},
+  {color:"blue",  icon:"🏭",name:"Industrial AI Assistant", desc:"PLC troubleshooting, VFD fault codes, SCADA support, OEE calculation, lean manufacturing guidance",tags:["PLC","VFD","OEE","TPM","Lean","SCADA"]},
+  {color:"amber", icon:"🔍",name:"Problem Diagnosis",        desc:"Describe any problem — home, electrical, industrial — get root cause analysis and step-by-step fix",tags:["Root Cause","5-Why","Fishbone","Fix Steps","Safety Note"]},
+  {color:"green", icon:"🏭",name:"TPM & Lean Knowledge",    desc:"All 8 pillars of TPM, OEE, 5S, Kaizen, SMED, FMEA, RCM, Value Stream Mapping — complete guide",tags:["TPM","5S","Kaizen","SMED","OEE","Lean"]},
+  {color:"purple",icon:"🔢",name:"Engineering Calculators",  desc:"12 calculators — OEE, motor current, cable size, EB bill, WiFi signal, pneumatic force, MTBF and more",tags:["OEE","Motor","Cable","EB Bill","Pneumatic","MTBF"]},
+  {color:"teal",  icon:"📋",name:"PM Checklists",            desc:"Daily, weekly, monthly maintenance checklists. AI generates custom checklists for any machine instantly",tags:["Daily PM","Weekly PM","Monthly PM","AI Generate","Custom"]},
+  {color:"red",   icon:"💡",name:"Home & General Help",      desc:"Plumbing, electrical, CCTV, internet, EB meter, appliances — solutions for everyday problems worldwide",tags:["Home Repair","Electrical","Plumbing","WiFi","CCTV","EB Meter"]},
+];
+
+const EMAIL_TYPES = [
+  {id:"complaint",l:"📢 Complaint"},{id:"inquiry",l:"❓ Inquiry"},{id:"follow_up",l:"🔄 Follow-Up"},
+  {id:"resignation",l:"🚪 Resignation"},{id:"job_apply",l:"💼 Job Application"},{id:"maintenance",l:"🔧 Maintenance Request"},
+  {id:"apology",l:"🙏 Apology"},{id:"introduction",l:"👋 Introduction"},{id:"correction",l:"✏️ Correct My Email"},
+  {id:"report",l:"📊 Weekly Report"},{id:"meeting",l:"📅 Meeting Invite"},{id:"feedback",l:"⭐ Feedback"},
+];
+const TONES = ["Professional","Friendly","Formal","Urgent","Polite","Assertive","Concise"];
+
+const TPM_TOPICS = [
+  {e:"🏛",l:"8 Pillars of TPM"},{e:"📊",l:"OEE Calculation"},{e:"🔧",l:"Autonomous Maintenance"},
+  {e:"📋",l:"Planned Maintenance"},{e:"✨",l:"5S Methodology"},{e:"♾",l:"Kaizen"},
+  {e:"⚡",l:"SMED Quick Changeover"},{e:"🎯",l:"Kobetsu Kaizen"},{e:"📉",l:"16 Major Losses"},
+  {e:"🔄",l:"Lean Manufacturing"},{e:"⏱",l:"MTBF & MTTR"},{e:"🔍",l:"FMEA Analysis"},
+  {e:"🌳",l:"RCM"},{e:"🚫",l:"Poka-Yoke"},{e:"🚦",l:"Andon System"},
+  {e:"🗺",l:"Value Stream Mapping"},{e:"🛡",l:"Safety in TPM"},{e:"📈",l:"KPI & Targets"},
+];
+
+// ── FLUX AI CHAT COMPONENT ──────────────────────────────────
+function FluxChat({cat="electrical", minimal=false}) {
+  const [msgs, setMsgs] = useState([{role:"ai",text:"👋 Hello! I'm **FLUX AI** — your intelligent assistant for problems, work, and industrial needs. Ask me anything!"}]);
+  const [inp, setInp] = useState(""); const [busy, setBusy] = useState(false);
+  const endRef = useRef(null);
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
+
+  const send = async (q) => {
+    const txt=(q||inp).trim(); if(!txt||busy) return;
+    setInp(""); setBusy(true);
+    setMsgs(p=>[...p,{role:"user",text:txt}]);
+    try {
+      const hist = msgs.slice(1).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}));
+      const res = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,system:FLUX_SYSTEM,messages:[...hist,{role:"user",content:txt}]})});
+      const d=await res.json();
+      setMsgs(p=>[...p,{role:"ai",text:d.content?.map(c=>c.text||"").join("")||"No response."}]);
+    } catch { setMsgs(p=>[...p,{role:"ai",text:"⚠️ Connection error. Please retry."}]); }
+    setBusy(false);
+  };
+
+  const fmt = (t) => t.split("\n").map((l,i)=>{
+    const h=l.replace(/\*\*(.*?)\*\*/g,"<strong style='color:var(--blue)'>$1</strong>");
+    return <div key={i} dangerouslySetInnerHTML={{__html:h}} style={{marginBottom:l.startsWith("**")?2:0}}/>;
+  });
+
+  return (
+    <div className="flux-chat">
+      <div className="flux-chat-header">
+        <div className="flux-ai-avatar">✦</div>
+        <div style={{flex:1}}>
+          <div className="flux-ai-name">FLUX AI</div>
+          <div className="flux-ai-status">● Online — Active</div>
+        </div>
+        <div className="flux-ai-model">FLUX v2.0</div>
+      </div>
+      <div className="chat-msgs">
+        {msgs.map((m,i)=>(
+          <div key={i} className={`msg ${m.role} fi`}>
+            {m.role==="ai"&&<div className="msg-head">✦ FLUX AI</div>}
+            <div>{fmt(m.text)}</div>
+          </div>
+        ))}
+        {busy&&<div className="typing"><div className="td"/><div className="td"/><div className="td"/></div>}
+        <div ref={endRef}/>
+      </div>
+      {!minimal&&<div className="chips-row">{(CHIPS[cat]||[]).map(c=><div key={c} className="chip" onClick={()=>send(c)}>{c}</div>)}</div>}
+      <div className="chat-irow">
+        <input className="chat-field" value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()} placeholder="Ask FLUX AI anything..."/>
+        <button className="btn btn-blue" onClick={()=>send()} disabled={busy} style={{padding:"9px 15px"}}>Send</button>
+      </div>
+    </div>
+  );
+}
+
+// ── DIAGNOSE TOOL ────────────────────────────────────────────
+function DiagnoseTool() {
+  const [cat,setCat]=useState("electrical"); const [problem,setProblem]=useState("");
+  const [loading,setLoading]=useState(false); const [report,setReport]=useState(null);
+  const [progress,setProgress]=useState(0); const [uploadedFile,setUploadedFile]=useState(null);
+  const [uploadErr,setUploadErr]=useState(""); const fileRef=useRef(null); const repRef=useRef(null);
+  const rid=useRef(`FX-${Date.now().toString(36).toUpperCase()}`);
+
+  const handleFile=(e)=>{
+    const file=e.target.files[0]; if(!file) return; setUploadErr("");
+    if(file.size>5*1024*1024){setUploadErr("Max 5MB"); return;}
+    const reader=new FileReader();
+    if(file.type.startsWith("image/")){
+      reader.onload=ev=>{const b64=ev.target.result.split(",")[1];setUploadedFile({name:file.name,type:"image",base64:b64,mediaType:file.type,preview:ev.target.result});};
+      reader.readAsDataURL(file);
+    } else {
+      reader.onload=ev=>setUploadedFile({name:file.name,type:"text",text:ev.target.result.slice(0,4000),preview:null});
+      reader.readAsText(file);
+    }
+  };
+  const rmFile=()=>{setUploadedFile(null);setUploadErr("");if(fileRef.current)fileRef.current.value="";};
+
+  const PROMPT_TEMPLATE = (c,p,f) => {
+    const fileSection = f?.type==="text" ? ("\n\nAttached file (" + f.name + "):\n" + f.text) : "";
+    return `You are FLUX AI, an expert problem diagnosis engineer. Never mention Claude or Anthropic.
+Category: ${c}. Problem: "${p||"Analyse the attached image/file"}"` + fileSection + `
+
+Generate a COMPLETE professional diagnosis. Respond ONLY as valid JSON:
+{"title":"Short title","severity":"Low/Medium/High/Critical","severityScore":65,"icon":"emoji","summary":"2-sentence summary",
+"topCauses":[{"rank":1,"cause":"cause","probability":"70%","why":"explanation"},{"rank":2,"cause":"...","probability":"20%","why":"..."},{"rank":3,"cause":"...","probability":"10%","why":"..."}],
+"fixSteps":[{"num":1,"title":"step","detail":"instruction","tip":"pro tip or null"},{"num":2,"title":"...","detail":"...","tip":null}],
+"whyChain":[{"step":1,"question":"Why?","cause":"Because...","solution":"Fix","owner":"Who","timeframe":"Immediate/Short/Long"},{"step":2,"question":"...","cause":"...","solution":"...","owner":"...","timeframe":"..."},{"step":3,"question":"...","cause":"...","solution":"...","owner":"...","timeframe":"..."},{"step":4,"question":"...","cause":"...","solution":"...","owner":"...","timeframe":"..."},{"step":5,"question":"...","cause":"...","solution":"...","owner":"...","timeframe":"..."}],
+"fishbone":{"Man":["c1","c2"],"Machine":["c1","c2"],"Method":["c1","c2"],"Material":["c1","c2"],"Environment":["c1"],"Measurement":["c1"]},
+"correctiveActions":[{"action":"...","owner":"...","deadline":"..."},{"action":"...","owner":"...","deadline":"..."}],
+"preventiveTips":["tip1","tip2","tip3"],
+"safetyNote":"Safety warning","professionalNeeded":true,"whenToCallPro":"When to call pro"}`;
+  };
+
+  const run=async()=>{
+    if(!problem.trim()&&!uploadedFile) return;
+    setLoading(true); setReport(null); setProgress(8);
+    const tick=setInterval(()=>setProgress(p=>Math.min(p+9,88)),700);
+    try {
+      const promptText=PROMPT_TEMPLATE(cat,problem,uploadedFile?.type==="text"?uploadedFile:null);
+      const userContent = uploadedFile?.type==="image"
+        ? [{type:"image",source:{type:"base64",media_type:uploadedFile.mediaType,data:uploadedFile.base64}},{type:"text",text:promptText}]
+        : promptText;
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2400,system:"You are FLUX AI. Never mention Claude or Anthropic.",messages:[{role:"user",content:userContent}]})});
+      const d=await res.json();
+      const t=d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+      clearInterval(tick); setProgress(100);
+      setReport(JSON.parse(t));
+      rid.current=`FX-${Date.now().toString(36).toUpperCase()}`;
+      setTimeout(()=>repRef.current?.scrollIntoView({behavior:"smooth"}),200);
+    } catch {clearInterval(tick);setProgress(0);setReport({error:true});}
+    setLoading(false);
+  };
+
+  const sc=s=>s==="Critical"?"#dc2626":s==="High"?"#d97706":s==="Medium"?"#1d4ed8":"#059669";
+  const sb=s=>s==="Critical"?"#fef2f2":s==="High"?"#fffbeb":s==="Medium"?"#eff6ff":"#ecfdf5";
+  const ow=(o="")=>{
+    if(/maint|tech/i.test(o)) return {bg:"#fffbeb",c:"#d97706",br:"#fde68a"};
+    if(/prod|oper/i.test(o)) return {bg:"#ecfdf5",c:"#059669",br:"#6ee7b7"};
+    if(/qual/i.test(o)) return {bg:"#fef2f2",c:"#dc2626",br:"#fecaca"};
+    return {bg:"#eff6ff",c:"#1d4ed8",br:"#bfdbfe"};
+  };
+
+  return (
+    <div className="diag-wrap">
+      <div className="diag-input-card fu">
+        <div className="diag-top">
+          <div className="diag-icon" style={{background:"#eff6ff"}}>🔍</div>
+          <div><div className="diag-label">FLUX AI Problem Diagnosis</div><div className="diag-sub">Photo · File · Text — AI gives you a professional diagnosis report</div></div>
+        </div>
+        <div style={{padding:"18px 20px"}}>
+          <div className="fg"><label className="fl">Category</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+              {CATS.map(c=><button key={c.id} onClick={()=>setCat(c.id)} style={{padding:"6px 13px",borderRadius:99,border:"1.5px solid",borderColor:cat===c.id?c.c:"#e0e5f0",background:cat===c.id?`${c.c}14`:"#f5f7fc",color:cat===c.id?c.c:"#3a4055",fontSize:".78rem",fontWeight:600,cursor:"pointer",transition:"all .15s"}}>{c.e} {c.label}</button>)}
+            </div>
+          </div>
+          <div className="fg"><label className="fl">Quick Select</label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
+              {(CHIPS[cat]||[]).map(p=><div key={p} onClick={()=>setProblem(p)} style={{fontSize:".76rem",padding:"4px 11px",borderRadius:99,border:"1.5px solid",borderColor:problem===p?"#1d4ed8":"#e0e5f0",background:problem===p?"#eff6ff":"#f5f7fc",color:problem===p?"#1d4ed8":"#3a4055",cursor:"pointer",fontWeight:500}}>{p}</div>)}
+            </div>
+          </div>
+          <div className="fg"><label className="fl">Describe Your Problem *</label>
+            <textarea className="fi2 fta" value={problem} onChange={e=>setProblem(e.target.value)} placeholder="Describe in detail — what happened, when it started, how often..." style={{minHeight:90}}/>
+          </div>
+          <div className="fg">
+            <label className="fl">📎 Attach Photo or File (AI analyses it)</label>
+            <input ref={fileRef} type="file" accept="image/*,.pdf,.csv,.xlsx,.txt" style={{display:"none"}} onChange={handleFile}/>
+            {!uploadedFile?(
+              <div className="upload-zone" onClick={()=>fileRef.current?.click()}>
+                <div style={{fontSize:"1.6rem",marginBottom:5}}>📷</div>
+                <div style={{fontWeight:700,fontSize:".86rem",color:"#0a0d14",marginBottom:3}}>Tap to upload photo or file</div>
+                <div style={{fontSize:".73rem",color:"#8590a6",lineHeight:1.6}}>📸 Fault photo · 📊 Excel data · 📄 PDF · AI reads and analyses</div>
+              </div>
+            ):(
+              <div className="upload-preview">
+                {uploadedFile.preview?<img src={uploadedFile.preview} alt="" style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid var(--blue-m)",flexShrink:0}}/>
+                  :<div style={{width:44,height:44,borderRadius:8,background:"#1d4ed8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.3rem",flexShrink:0}}>📄</div>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:".84rem",color:"#1d4ed8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{uploadedFile.name}</div>
+                  <div style={{fontSize:".7rem",color:"#3a4055",marginTop:2}}>{uploadedFile.type==="image"?"✅ FLUX AI will visually analyse this image":"✅ FLUX AI will read and analyse file content"}</div>
+                </div>
+                <button onClick={rmFile} style={{background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",borderRadius:6,padding:"4px 9px",cursor:"pointer",fontSize:".72rem",fontWeight:700}}>✕</button>
+              </div>
+            )}
+            {uploadErr&&<div style={{color:"#dc2626",fontSize:".76rem",marginTop:4}}>⚠ {uploadErr}</div>}
+          </div>
+          {progress>0&&<div style={{height:4,background:"#eaecf4",borderRadius:99,overflow:"hidden",marginBottom:10}}><div style={{height:"100%",background:"linear-gradient(90deg,var(--blue),var(--indigo))",width:`${progress}%`,transition:"width .5s",borderRadius:99}}/></div>}
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn btn-blue" onClick={run} disabled={loading||(!problem.trim()&&!uploadedFile)} style={{flex:1,justifyContent:"center",fontSize:".92rem",padding:"12px"}}>
+              {loading?"🔍 Diagnosing...":uploadedFile&&!problem.trim()?`🔍 Analyse ${uploadedFile.type==="image"?"Photo":"File"}`:"🔍 Diagnose My Problem"}
+            </button>
+            {report&&<button className="btn btn-ghost" onClick={()=>{setReport(null);setProgress(0);}}>New</button>}
+          </div>
+        </div>
+      </div>
+
+      <div ref={repRef}>
+      {report&&!report.error&&(
+        <div className="diag-input-card pop">
+          <div className="diag-top">
+            <div className="diag-icon" style={{background:sb(report.severity)}}>{report.icon||"🔧"}</div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"JetBrains Mono, monospace",fontSize:".6rem",color:"#8590a6",marginBottom:2}}>Report: {rid.current} · {new Date().toLocaleDateString()}</div>
+              <div className="diag-label">{report.title}</div>
+            </div>
+            <span className="sbadge" style={{background:sb(report.severity),color:sc(report.severity)}}>● {report.severity}</span>
+          </div>
+          <div className="sev-row">
+            <span style={{fontSize:".72rem",fontWeight:700,color:"#8590a6",textTransform:"uppercase",letterSpacing:".07em"}}>Severity</span>
+            <div className="sev-bar"><div className="sev-fill" style={{width:`${report.severityScore||50}%`,background:`linear-gradient(90deg,var(--green),${sc(report.severity)})`}}/></div>
+            <span className="sev-val" style={{color:sc(report.severity)}}>{report.severityScore||50}%</span>
+          </div>
+          <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:18}}>
+            {/* Summary */}
+            <div><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>📋 Summary</div>
+              <div style={{padding:"13px 15px",background:"#f5f7fc",border:"1.5px solid var(--line)",borderRadius:9,fontSize:".9rem",color:"#0a0d14",lineHeight:1.7}}>{report.summary}</div>
+            </div>
+            {/* Causes */}
+            <div><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>🎯 Most Likely Causes</div>
+              {report.topCauses?.map((c,i)=>(
+                <div key={i} style={{display:"flex",gap:11,padding:"10px 13px",border:"1.5px solid var(--line)",borderRadius:9,background:"#f5f7fc",marginBottom:6,alignItems:"flex-start",transition:"all .18s"}}>
+                  <div style={{width:26,height:26,borderRadius:7,background:i===0?"#fef2f2":i===1?"#fffbeb":"#eaecf4",color:i===0?"#dc2626":i===1?"#d97706":"#8590a6",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".72rem",flexShrink:0}}>{c.rank}</div>
+                  <div style={{flex:1}}><div style={{fontSize:".88rem",color:"#0a0d14",fontWeight:600}}>{c.cause}</div><div style={{fontSize:".73rem",color:"#8590a6",marginTop:2}}>{c.why}</div></div>
+                  <div style={{fontFamily:"JetBrains Mono, monospace",fontSize:".78rem",fontWeight:700,color:i===0?"#dc2626":i===1?"#d97706":"#8590a6",flexShrink:0}}>{c.probability}</div>
+                </div>
+              ))}
+            </div>
+            {/* Steps */}
+            <div><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>🔧 Step-by-Step Fix</div>
+              {report.fixSteps?.map((s,i)=>{const last=i===report.fixSteps.length-1;return(
+                <div key={i} style={{display:"flex",gap:13,marginBottom:4}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:30,flexShrink:0}}>
+                    <div style={{width:30,height:30,borderRadius:"50%",background:last?"#ecfdf5":"#eff6ff",color:last?"#059669":"#1d4ed8",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".78rem"}}>{s.num}</div>
+                    {!last&&<div style={{width:2,flex:1,minHeight:10,background:"#eaecf4"}}/>}
+                  </div>
+                  <div style={{flex:1,paddingBottom:12}}>
+                    <div style={{fontWeight:700,fontSize:".9rem",color:"#0a0d14",marginBottom:2}}>{s.title}</div>
+                    <div style={{fontSize:".84rem",color:"#3a4055",lineHeight:1.6}}>{s.detail}</div>
+                    {s.tip&&<div style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:5,fontSize:".73rem",fontWeight:600,color:"#d97706",background:"#fffbeb",padding:"3px 9px",borderRadius:99}}>💡 {s.tip}</div>}
+                  </div>
+                </div>
+              );})}
+            </div>
+            {/* Why Chain */}
+            <div><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>🔍 Why-Why Analysis — Cause + Solution</div>
+              {report.whyChain?.map((w,i)=>{const last=i===report.whyChain.length-1;const os=ow(w.owner);return(
+                <div key={i} style={{display:"flex",gap:11}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:34,flexShrink:0}}>
+                    <div style={{width:33,height:33,borderRadius:"50%",background:last?"#fef2f2":"#eff6ff",color:last?"#dc2626":"#1d4ed8",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".72rem"}}>W{w.step}</div>
+                    {!last&&<div style={{width:2,flex:1,minHeight:10,background:"#eaecf4"}}/>}
+                  </div>
+                  <div style={{flex:1,paddingBottom:12}}>
+                    <div style={{fontSize:".72rem",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",color:"#8590a6",marginBottom:4}}>Why {w.step}</div>
+                    <div style={{fontWeight:600,fontSize:".88rem",color:"#0a0d14",marginBottom:7}}>{w.question}</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:6}}>
+                      <div className="cause-box" style={{borderLeftColor:"#d97706",background:"#fffbeb"}}><div style={{fontSize:".64rem",fontWeight:800,color:"#d97706",marginBottom:2}}>🔴 CAUSE</div>{w.cause}</div>
+                      <div className="sol-box" style={{borderLeftColor:"#059669",background:"#ecfdf5"}}><div style={{fontSize:".64rem",fontWeight:800,color:"#059669",marginBottom:2}}>✅ SOLUTION</div>{w.solution}</div>
+                    </div>
+                    <div style={{display:"flex",gap:5}}>
+                      <span style={{fontSize:".65rem",fontWeight:700,padding:"2px 8px",borderRadius:99,background:os.bg,color:os.c,border:`1px solid ${os.br}`}}>👤 {w.owner}</span>
+                      <span style={{fontSize:".65rem",padding:"2px 8px",borderRadius:99,background:"#f5f7fc",color:"#8590a6",border:"1px solid var(--line)",fontFamily:"JetBrains Mono, monospace"}}>⏱ {w.timeframe}</span>
+                    </div>
+                  </div>
+                </div>
+              );})}
+            </div>
+            {/* Fishbone */}
+            <div><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>🐟 Fishbone — 6M Causes</div>
+              <div className="fish-grid">
+                {report.fishbone&&Object.entries(report.fishbone).map(([b,cs])=>{
+                  const fc={Man:"#d97706",Machine:"#1d4ed8",Method:"#059669",Material:"#f59e0b",Environment:"#7c3aed",Measurement:"#dc2626"};
+                  return(<div className="fish-cell" key={b}><div className="fish-head" style={{color:fc[b]||"#0a0d14"}}>{b}</div>{cs.map((c,i)=><div className="fish-pt" key={i}>{c}</div>)}</div>);
+                })}
+              </div>
+            </div>
+            {/* Actions */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+              <div>
+                <div style={{fontSize:".65rem",fontWeight:800,color:"#dc2626",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>⚡ Corrective Actions</div>
+                {report.correctiveActions?.map((a,i)=>{const os=ow(a.owner);return(
+                  <div key={i} className="act-row">
+                    <div className="act-text"><span style={{fontWeight:800,color:"#8590a6",fontSize:".75rem"}}>{i+1}. </span>{a.action}</div>
+                    <span className="act-own" style={{background:os.bg,color:os.c,border:`1px solid ${os.br}`}}>{a.owner}</span>
+                    <div className="act-dl">{a.deadline}</div>
+                  </div>
+                );})}
+              </div>
+              <div>
+                <div style={{fontSize:".65rem",fontWeight:800,color:"#059669",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>🛡 Prevention Tips</div>
+                {report.preventiveTips?.map((t,i)=><div key={i} style={{padding:"8px 12px",marginBottom:6,background:"#ecfdf5",borderRadius:8,border:"1px solid #6ee7b7",fontSize:".84rem",color:"#0a0d14",display:"flex",gap:7}}><span style={{color:"#059669",fontWeight:800,flexShrink:0}}>✓</span>{t}</div>)}
+              </div>
+            </div>
+            {report.safetyNote&&<div className="safety-box"><div style={{fontSize:"1.1rem",flexShrink:0}}>⚠️</div><div className="safety-text"><strong>Safety:</strong> {report.safetyNote}</div></div>}
+            {report.professionalNeeded&&<div style={{padding:"11px 14px",background:"#fef2f2",border:"1.5px solid #fecaca",borderRadius:9,fontSize:".86rem",color:"#0a0d14"}}><strong style={{color:"#dc2626"}}>📞 Call a professional when:</strong> {report.whenToCallPro}</div>}
+          </div>
+          <div className="rep-footer">
+            <div className="rep-id">FLUX AI Report · {rid.current} · fluxdigitals.in</div>
+            <button className="btn btn-ghost" style={{fontSize:".76rem",padding:"6px 13px"}} onClick={()=>window.print()}>🖨 Print</button>
+          </div>
+        </div>
+      )}
+      {report?.error&&<div style={{padding:18,background:"#fef2f2",border:"1.5px solid #fecaca",borderRadius:12,color:"#dc2626",fontSize:".88rem"}}>⚠️ Analysis failed. Please check connection and retry.</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── CALCULATOR ───────────────────────────────────────────────
+function CalcPanel({id}) {
+  const [vals,setVals]=useState({}); const [res,setRes]=useState(null); const [hist,setHist]=useState([]);
+  const cfg=CALC_CFG[id]; if(!cfg) return null;
+  const set=(k,v)=>setVals(p=>({...p,[k]:parseFloat(v)||0}));
+  const calc=()=>{try{const r=cfg.fn(vals);setRes(r);setHist(h=>[{ts:new Date().toLocaleTimeString(),val:r.val,unit:r.unit},...h.slice(0,5)]);}catch{setRes({val:"—",unit:"",note:"Check inputs"});}};
+  return(
+    <div>
+      {cfg.fields.map(f=><div key={f.k} className="fg"><label className="fl">{f.l}</label><input className="fi2" type="number" placeholder={f.ph} onChange={e=>set(f.k,e.target.value)}/></div>)}
+      <button className="btn btn-blue" onClick={calc} style={{width:"100%",justifyContent:"center"}}>Calculate →</button>
+      {res&&<div className="calc-res fi" style={{marginTop:13}}><div><span className="calc-big">{res.val}</span><span className="calc-unit">{res.unit}</span></div>{res.note&&<div className="calc-note">{res.note}</div>}</div>}
+      {hist.length>0&&<div style={{border:"1.5px solid var(--line)",borderRadius:9,overflow:"hidden",marginTop:12}}><div style={{padding:"7px 12px",background:"#f5f7fc",borderBottom:"1px solid var(--line)",fontSize:".68rem",fontWeight:700,color:"#8590a6",letterSpacing:".07em",textTransform:"uppercase"}}>History</div>{hist.map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 12px",borderBottom:"1px solid var(--line)",fontSize:".8rem",color:"#8590a6"}}><span>{h.ts}</span><span style={{fontFamily:"JetBrains Mono, monospace",fontWeight:600,color:"#1d4ed8"}}>{h.val} {h.unit}</span></div>)}</div>}
+    </div>
+  );
+}
+
+// ── PM MODULE ────────────────────────────────────────────────
+function PMModule() {
+  const [tab,setTab]=useState("daily"); const [chk,setChk]=useState({}); const [machine,setMachine]=useState(""); const [busy,setBusy]=useState(false); const [aiItems,setAiItems]=useState(null);
+  const items=PM_DATA[tab]||[]; const disp=aiItems||items;
+  const done=disp.filter(i=>chk[i.id||i.t]).length; const pct=disp.length?Math.round(done/disp.length*100):0;
+  const tog=id=>setChk(p=>({...p,[id]:!p[id]}));
+  const gen=async()=>{
+    if(!machine.trim()) return; setBusy(true); setAiItems(null);
+    try{
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:700,system:"You are FLUX AI. Never mention Claude.",messages:[{role:"user",content:`Generate a ${tab} maintenance checklist for: ${machine}. JSON only: {"items":[{"id":"a1","m":"equipment","t":"task","critical":false}],"safety":"note"} Include 8-10 tasks.`}]})});
+      const d=await r.json(); const t=d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+      setAiItems(JSON.parse(t).items);
+    }catch{setAiItems(null);}
+    setBusy(false);
+  };
+  return(
+    <div className="pm-shell">
+      <div className="pm-tabs">{["daily","weekly","monthly"].map(t=><button key={t} className={`pm-tab ${tab===t?"on":""}`} onClick={()=>{setTab(t);setChk({});setAiItems(null);}}>{t.charAt(0).toUpperCase()+t.slice(1)} PM</button>)}</div>
+      <div style={{padding:"14px 16px"}}>
+        <div style={{display:"flex",gap:7,marginBottom:12}}>
+          <input className="fi2" value={machine} onChange={e=>setMachine(e.target.value)} placeholder="Enter machine/system for AI checklist (e.g. PowerFlex VFD, Water Pump, CCTV DVR)..." style={{flex:1}}/>
+          <button className="btn btn-green" onClick={gen} disabled={busy||!machine.trim()} style={{whiteSpace:"nowrap"}}>{busy?"⏳":"🤖"} Generate</button>
+        </div>
+        {aiItems&&<div style={{padding:"7px 11px",background:"#eff6ff",border:"1.5px solid var(--blue-m)",borderRadius:8,fontSize:".78rem",color:"#1d4ed8",fontWeight:600,marginBottom:10}}>✨ AI checklist for: {machine}</div>}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <span style={{fontSize:".8rem",fontWeight:700,color:"#0a0d14"}}>{done}/{disp.length} completed</span>
+          <span style={{fontSize:".8rem",fontWeight:700,color:"#059669"}}>{pct}%</span>
+        </div>
+        <div className="pm-prog-bar"><div className="pm-prog-fill" style={{width:`${pct}%`}}/></div>
+        {disp.map((item,idx)=>{const id=item.id||item.t||String(idx);return(
+          <div key={id} className="pm-item" onClick={()=>tog(id)}>
+            <div className={`pm-chk ${chk[id]?"dn":""}`}>{chk[id]?"✓":""}</div>
+            <div><div className={`pm-t ${chk[id]?"dn":""}`}>{item.t||item.task}{item.critical&&<span style={{fontSize:".58rem",fontWeight:800,color:"#dc2626",marginLeft:5,padding:"1px 5px",borderRadius:99,background:"#fef2f2"}}>CRITICAL</span>}</div><div className="pm-m">{item.m||item.machine}</div></div>
+          </div>
+        );})}
+        <div style={{display:"flex",gap:7,marginTop:11}}>
+          <button className="btn btn-ghost" style={{fontSize:".76rem"}} onClick={()=>setChk(Object.fromEntries(disp.map(i=>[i.id||i.t,true])))}>Check All</button>
+          <button className="btn btn-ghost" style={{fontSize:".76rem"}} onClick={()=>setChk({})}>Reset</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── EMAIL WRITER ─────────────────────────────────────────────
+function EmailWriter() {
+  const [eType,setEType]=useState("complaint"); const [tone,setTone]=useState("Professional");
+  const [topic,setTopic]=useState(""); const [recip,setRecip]=useState("");
+  const [rawEmail,setRawEmail]=useState(""); const [mode,setMode]=useState("write");
+  const [loading,setLoading]=useState(false); const [result,setResult]=useState(null);
+  const [copied,setCopied]=useState("");
+
+  const copy=(text,id)=>{navigator.clipboard.writeText(text).then(()=>{setCopied(id);setTimeout(()=>setCopied(""),2000);});};
+
+  const run=async()=>{
+    setLoading(true); setResult(null);
+    try{
+      let prompt="";
+      if(mode==="correct"){
+        prompt=`You are FLUX AI. Correct and improve this email. Fix grammar, tone, professionalism. Respond as JSON: {"corrected":"full corrected email","changes":["change1","change2","change3"],"subject":"suggested subject line"}\n\nOriginal email:\n${rawEmail}`;
+      } else {
+        prompt=`You are FLUX AI. Write a ${tone.toLowerCase()} ${eType.replace("_"," ")} email. Topic: ${topic}. Recipient: ${recip||"(recipient)"}. Write 2 versions. JSON only: {"subject":"subject line","short":{"body":"short email"},"detailed":{"body":"detailed email"},"tips":["tip1","tip2","tip3"]}`;
+      }
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,system:"You are FLUX AI. Never mention Claude or Anthropic.",messages:[{role:"user",content:prompt}]})});
+      const d=await res.json();
+      const t=d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+      setResult(JSON.parse(t));
+    }catch{setResult({error:true});}
+    setLoading(false);
+  };
+
+  return(
+    <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:14}}>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+        <div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:18}}>
+          <div style={{fontFamily:"Sora, sans-serif",fontWeight:800,fontSize:"1rem",color:"#0a0d14",marginBottom:4}}>✉️ Email Writer</div>
+          <div style={{fontSize:".78rem",color:"#8590a6",marginBottom:14}}>AI writes professional emails instantly</div>
+          <div style={{display:"flex",gap:5,marginBottom:14}}>
+            {[["write","✍️ Write New"],["correct","✏️ Correct Mine"]].map(([id,l])=><button key={id} onClick={()=>{setMode(id);setResult(null);}} style={{flex:1,padding:"7px 0",borderRadius:8,border:"1.5px solid",borderColor:mode===id?"#1d4ed8":"#e0e5f0",background:mode===id?"#eff6ff":"#f5f7fc",color:mode===id?"#1d4ed8":"#3a4055",fontSize:".76rem",fontWeight:600,cursor:"pointer"}}>{l}</button>)}
+          </div>
+          {mode==="write"?(
+            <>
+              <div className="fg"><label className="fl">Email Type</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:4}}>
+                  {EMAIL_TYPES.map(t=><button key={t.id} onClick={()=>setEType(t.id)} style={{padding:"4px 9px",borderRadius:7,border:"1.5px solid",borderColor:eType===t.id?"#1d4ed8":"#e0e5f0",background:eType===t.id?"#eff6ff":"#f5f7fc",color:eType===t.id?"#1d4ed8":"#3a4055",fontSize:".72rem",fontWeight:600,cursor:"pointer"}}>{t.l}</button>)}
+                </div>
+              </div>
+              <div className="fg"><label className="fl">Tone</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:4}}>
+                  {TONES.map(t=><button key={t} onClick={()=>setTone(t)} style={{padding:"3px 9px",borderRadius:99,border:"1.5px solid",borderColor:tone===t?"#1d4ed8":"#e0e5f0",background:tone===t?"#eff6ff":"#f5f7fc",color:tone===t?"#1d4ed8":"#3a4055",fontSize:".72rem",fontWeight:600,cursor:"pointer"}}>{t}</button>)}
+                </div>
+              </div>
+              <div className="fg"><label className="fl">Topic / What to write about *</label><textarea className="fi2 fta" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Complaint about delayed delivery, Job application for Electrical Engineer, Weekly report to manager..." style={{minHeight:75}}/></div>
+              <div className="fg"><label className="fl">Recipient (optional)</label><input className="fi2" value={recip} onChange={e=>setRecip(e.target.value)} placeholder="e.g. Mr. Kumar, HR Department..."/></div>
+            </>
+          ):(
+            <div className="fg"><label className="fl">Paste Your Email to Correct *</label><textarea className="fi2 fta" value={rawEmail} onChange={e=>setRawEmail(e.target.value)} placeholder="Paste your draft email here — FLUX AI will correct grammar, improve tone, make it professional..." style={{minHeight:120}}/></div>
+          )}
+          <button className="btn btn-blue" onClick={run} disabled={loading||(mode==="write"?!topic.trim():!rawEmail.trim())} style={{width:"100%",justifyContent:"center"}}>{loading?"Writing...":mode==="write"?"✉️ Write Email":"✏️ Correct Email"}</button>
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:11}}>
+        {!result&&!loading&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:40,textAlign:"center"}}><div style={{fontSize:"2.2rem",marginBottom:11}}>✉️</div><div style={{fontWeight:700,color:"#3a4055",marginBottom:5}}>{mode==="write"?"Fill in details to write your email":"Paste your email to get it corrected"}</div><div style={{fontSize:".8rem",color:"#8590a6",lineHeight:1.7}}>FLUX AI writes {mode==="write"?"2 versions: Short & Detailed":"corrected version with tracked changes"}</div></div>}
+        {loading&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:40,textAlign:"center"}}><div style={{fontSize:"1.8rem",marginBottom:10}}>✍️</div><div style={{fontWeight:700,color:"#1d4ed8"}}>FLUX AI is writing...</div></div>}
+        {result&&!result.error&&(
+          <>
+            {result.subject&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:10,padding:13,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <div><div style={{fontSize:".64rem",fontWeight:800,color:"#8590a6",letterSpacing:".07em",textTransform:"uppercase",marginBottom:2}}>Subject Line</div><div style={{fontWeight:700,fontSize:".92rem",color:"#0a0d14"}}>{result.subject}</div></div>
+              <button className={`copy-btn ${copied==="subj"?"copied":""}`} onClick={()=>copy(result.subject,"subj")}>{copied==="subj"?"✓":"Copy"}</button>
+            </div>}
+            {result.corrected&&<div style={{background:"#fff",border:"1.5px solid var(--green)",borderRadius:10,padding:15}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}><div style={{fontSize:".64rem",fontWeight:800,color:"#059669",letterSpacing:".07em",textTransform:"uppercase"}}>✅ Corrected Email</div><button className={`copy-btn ${copied==="corr"?"copied":""}`} onClick={()=>copy(result.corrected,"corr")}>{copied==="corr"?"✓ Copied":"📋 Copy"}</button></div>
+              <pre style={{fontFamily:"DM Sans, sans-serif",fontSize:".86rem",color:"#0a0d14",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{result.corrected}</pre>
+              {result.changes&&<div style={{marginTop:11,padding:"10px 13px",background:"#eff6ff",border:"1.5px solid var(--blue-m)",borderRadius:8}}><div style={{fontSize:".64rem",fontWeight:800,color:"#1d4ed8",marginBottom:6,letterSpacing:".07em",textTransform:"uppercase"}}>Changes Made</div>{result.changes.map((c,i)=><div key={i} style={{fontSize:".82rem",color:"#0a0d14",padding:"3px 0",display:"flex",gap:7}}><span style={{color:"#1d4ed8",fontWeight:800,flexShrink:0}}>•</span>{c}</div>)}</div>}
+            </div>}
+            {result.short&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:10,padding:15}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}><div style={{fontSize:".64rem",fontWeight:800,color:"#1d4ed8",letterSpacing:".07em",textTransform:"uppercase"}}>Version 1 — Short & Direct</div><button className={`copy-btn ${copied==="s"?"copied":""}`} onClick={()=>copy(result.short.body,"s")}>{copied==="s"?"✓ Copied":"📋 Copy"}</button></div>
+              <pre style={{fontFamily:"DM Sans, sans-serif",fontSize:".86rem",color:"#0a0d14",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{result.short.body}</pre>
+            </div>}
+            {result.detailed&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:10,padding:15}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}><div style={{fontSize:".64rem",fontWeight:800,color:"#4f46e5",letterSpacing:".07em",textTransform:"uppercase"}}>Version 2 — Detailed & Formal</div><button className={`copy-btn ${copied==="l"?"copied":""}`} onClick={()=>copy(result.detailed.body,"l")}>{copied==="l"?"✓ Copied":"📋 Copy"}</button></div>
+              <pre style={{fontFamily:"DM Sans, sans-serif",fontSize:".86rem",color:"#0a0d14",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{result.detailed.body}</pre>
+            </div>}
+            {result.tips&&<div style={{background:"#fffbeb",border:"1.5px solid #fde68a",borderRadius:10,padding:13}}><div style={{fontSize:".64rem",fontWeight:800,color:"#d97706",letterSpacing:".07em",textTransform:"uppercase",marginBottom:7}}>💡 Tips</div>{result.tips.map((t,i)=><div key={i} style={{fontSize:".83rem",color:"#0a0d14",padding:"3px 0",display:"flex",gap:7}}><span style={{color:"#d97706",fontWeight:800}}>•</span>{t}</div>)}</div>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TPM KNOWLEDGE ────────────────────────────────────────────
+function TPMKnowledge() {
+  const [topic,setTopic]=useState(""); const [loading,setLoading]=useState(false); const [result,setResult]=useState(null); const [secTab,setSecTab]=useState("overview");
+  const search=async(q)=>{
+    const query=q||topic; if(!query) return; setTopic(query); setLoading(true); setResult(null);
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,system:"You are FLUX AI, expert in TPM and Lean. Never mention Claude.",
+          messages:[{role:"user",content:`TPM/Lean topic: "${query}". JSON only: {"title":"...","definition":"2-3 sentence definition","overview":"detailed paragraph","keyPoints":["p1","p2","p3","p4","p5"],"howToImplement":[{"step":1,"title":"...","detail":"..."},{"step":2,"title":"...","detail":"..."},{"step":3,"title":"...","detail":"..."},{"step":4,"title":"...","detail":"..."}],"benefits":["b1","b2","b3","b4"],"commonMistakes":["m1","m2","m3"],"kpis":["k1 with target","k2","k3"],"realExample":"real factory example","relatedTopics":["t1","t2","t3"]}`}]})});
+      const d=await res.json(); const t=d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+      setResult(JSON.parse(t)); setSecTab("overview");
+    }catch{setResult({error:true});}
+    setLoading(false);
+  };
+  const STABS=[["overview","📖 Overview"],["steps","🔧 Implementation"],["benefits","✅ Benefits"],["kpis","📊 KPIs"],["mistakes","⚠️ Mistakes"],["example","🏭 Example"]];
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:13}}>
+      <div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:20}}>
+        <div style={{fontFamily:"Sora, sans-serif",fontWeight:800,fontSize:"1rem",color:"#0a0d14",marginBottom:3}}>🏭 TPM & Lean Manufacturing Knowledge</div>
+        <div style={{fontSize:".78rem",color:"#8590a6",marginBottom:13}}>Search any topic — get full implementation guide, KPIs, real examples</div>
+        <div style={{display:"flex",gap:7,marginBottom:11}}>
+          <input className="fi2" value={topic} onChange={e=>setTopic(e.target.value)} onKeyDown={e=>e.key==="Enter"&&search()} placeholder="e.g. 8 pillars of TPM, OEE formula, 5S steps, SMED, Kaizen event, FMEA..." style={{flex:1}}/>
+          <button className="btn btn-blue" onClick={()=>search()} disabled={loading||!topic.trim()} style={{padding:"9px 16px",whiteSpace:"nowrap"}}>{loading?"Loading...":"Search"}</button>
+        </div>
+        <div className="tpm-topic-grid">{TPM_TOPICS.map(t=><button key={t.l} className="tpm-topic-btn" onClick={()=>search(t.l)}>{t.e} {t.l}</button>)}</div>
+      </div>
+      {loading&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:36,textAlign:"center",color:"#8590a6"}}>🔍 Loading knowledge...</div>}
+      {result&&!result.error&&(
+        <div style={{display:"flex",flexDirection:"column",gap:11}} className="fi">
+          <div style={{background:"linear-gradient(135deg,var(--blue-t),var(--indigo-t))",border:"1.5px solid var(--blue-m)",borderRadius:12,padding:20}}>
+            <div style={{fontFamily:"Sora, sans-serif",fontWeight:800,fontSize:"1.3rem",color:"#0a0d14",marginBottom:7}}>{result.title}</div>
+            <div style={{fontSize:".9rem",color:"#3a4055",lineHeight:1.75,fontStyle:"italic"}}>{result.definition}</div>
+          </div>
+          <div className="tpm-sec-tabs">{STABS.map(([id,l])=><button key={id} className={`tpm-sec-tab ${secTab===id?"on":""}`} onClick={()=>setSecTab(id)}>{l}</button>)}</div>
+          {secTab==="overview"&&<><div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#8590a6",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>Overview</div><div style={{fontSize:".9rem",color:"#0a0d14",lineHeight:1.8}}>{result.overview}</div></div>
+          <div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#1d4ed8",letterSpacing:".09em",textTransform:"uppercase",marginBottom:9}}>Key Points</div>{result.keyPoints?.map((p,i)=><div key={i} style={{display:"flex",gap:10,padding:"7px 0",borderBottom:"1px solid var(--line)",fontSize:".87rem",color:"#0a0d14"}}><span style={{fontFamily:"JetBrains Mono, monospace",fontSize:".68rem",fontWeight:700,color:"#1d4ed8",background:"#eff6ff",padding:"2px 8px",borderRadius:6,flexShrink:0,alignSelf:"flex-start",marginTop:1}}>{i+1}</span>{p}</div>)}</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{result.relatedTopics?.map(t=><button key={t} onClick={()=>search(t)} style={{padding:"5px 12px",borderRadius:99,border:"1.5px solid var(--blue-m)",background:"#eff6ff",color:"#1d4ed8",fontSize:".75rem",fontWeight:600,cursor:"pointer"}}>→ {t}</button>)}</div></>}
+          {secTab==="steps"&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#059669",letterSpacing:".09em",textTransform:"uppercase",marginBottom:12}}>Implementation Steps</div>{result.howToImplement?.map((s,i)=><div key={i} style={{display:"flex",gap:12,marginBottom:14}}><div style={{width:32,height:32,borderRadius:"50%",background:"#1d4ed8",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:".78rem",flexShrink:0}}>{s.step}</div><div><div style={{fontWeight:700,fontSize:".9rem",color:"#0a0d14",marginBottom:2}}>{s.title}</div><div style={{fontSize:".84rem",color:"#3a4055",lineHeight:1.65}}>{s.detail}</div></div></div>)}</div>}
+          {secTab==="benefits"&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#059669",letterSpacing:".09em",textTransform:"uppercase",marginBottom:9}}>Benefits</div>{result.benefits?.map((b,i)=><div key={i} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:"1px solid var(--line)",fontSize:".87rem",color:"#0a0d14"}}><span style={{color:"#059669",fontWeight:800,flexShrink:0}}>✓</span>{b}</div>)}</div>}
+          {secTab==="kpis"&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#7c3aed",letterSpacing:".09em",textTransform:"uppercase",marginBottom:9}}>KPIs & Targets</div>{result.kpis?.map((k,i)=><div key={i} style={{display:"flex",gap:9,padding:"8px 11px",marginBottom:6,background:"#f5f3ff",borderRadius:8,fontSize:".87rem",color:"#0a0d14"}}><span style={{color:"#7c3aed",fontWeight:800,flexShrink:0}}>📊</span>{k}</div>)}</div>}
+          {secTab==="mistakes"&&<div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#dc2626",letterSpacing:".09em",textTransform:"uppercase",marginBottom:9}}>Common Mistakes</div>{result.commonMistakes?.map((m,i)=><div key={i} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:"1px solid var(--line)",fontSize:".87rem",color:"#0a0d14"}}><span style={{color:"#dc2626",fontWeight:800,flexShrink:0}}>✕</span>{m}</div>)}</div>}
+          {secTab==="example"&&<div style={{background:"#ecfdf5",border:"1.5px solid #6ee7b7",borderRadius:11,padding:18}}><div style={{fontSize:".65rem",fontWeight:800,color:"#059669",letterSpacing:".09em",textTransform:"uppercase",marginBottom:8}}>Real-World Example</div><div style={{fontSize:".9rem",color:"#0a0d14",lineHeight:1.8}}>{result.realExample}</div></div>}
+        </div>
+      )}
+      {result?.error&&<div style={{padding:18,background:"#fef2f2",border:"1.5px solid #fecaca",borderRadius:11,color:"#dc2626"}}>Search failed. Please retry.</div>}
+    </div>
+  );
+}
+
+// ── MAIN APP ─────────────────────────────────────────────────
+export default function App() {
+  const [page,setPage]=useState("HOME");
+  const [cat,setCat]=useState("electrical");
+  const [calcId,setCalcId]=useState("ebill");
+  const [currency,setCurrency]=useState({code:"INR",symbol:"₹",rate:1});
+
+  useEffect(()=>{
+    fetch("https://ipapi.co/json/").then(r=>r.json()).then(d=>{
+      const m={US:{code:"USD",symbol:"$",rate:0.012},GB:{code:"GBP",symbol:"£",rate:0.0097},AE:{code:"AED",symbol:"د.إ",rate:0.044},AU:{code:"AUD",symbol:"A$",rate:0.018},SG:{code:"SGD",symbol:"S$",rate:0.016},CA:{code:"CAD",symbol:"C$",rate:0.016},MY:{code:"MYR",symbol:"RM",rate:0.056},SA:{code:"SAR",symbol:"SR",rate:0.045},QA:{code:"QAR",symbol:"QR",rate:0.044},JP:{code:"JPY",symbol:"¥",rate:1.81},DE:{code:"EUR",symbol:"€",rate:0.011},FR:{code:"EUR",symbol:"€",rate:0.011},EU:{code:"EUR",symbol:"€",rate:0.011},NZ:{code:"NZD",symbol:"NZ$",rate:0.020}};
+      const c=m[d.country_code]; if(c) setCurrency(c);
+    }).catch(()=>{});
+  },[]);
+
+  const fmt=(inr)=>{if(inr===0)return"Free";const a=(inr*currency.rate);return `${currency.symbol}${a<10?a.toFixed(2):Math.round(a).toLocaleString()}`;};
+  const go=(p)=>setPage(p);
+
+  const NAV=[["HOME","Home"],["DIAGNOSE","Diagnose"],["AI","FLUX AI Chat"],["TOOLS","Calculators"],["PM","PM Checklists"],["EMAIL","Email Writer"],["TPM","TPM Knowledge"],["PLANS","Pricing"]];
+
+  const PLANS=[
+    {tier:"FREE",inr:0,pop:false,desc:"For anyone who needs occasional help",feats:["3 Diagnoses/day","5 FLUX AI messages/day","4 calculators","Basic PM checklists","Email correction (2/day)"]},
+    {tier:"ENGINEER",inr:499,pop:true,desc:"For professionals and maintenance engineers",feats:["Unlimited AI diagnosis","Unlimited FLUX AI chat","All 12 calculators","Full PM suite","Unlimited email writing","TPM knowledge base","Why-Why + Fishbone","PDF reports","Priority support"]},
+    {tier:"ENTERPRISE",inr:1999,pop:false,desc:"For teams and manufacturing companies",feats:["Everything in Engineer","10 team accounts","Custom PM schedules","API access","SCADA dashboard","Branded reports","Dedicated support","Custom AI training"]},
+  ];
+
+  return(
+    <div style={{minHeight:"100vh",background:"#f5f7fc"}}>
+      <nav className="nav">
+        <div className="brand" onClick={()=>go("HOME")}>
+          <div className="brand-logo">✦</div>
+          <span className="brand-name">FLUX<b>DIGITAL</b></span>
+          <span className="brand-tag">AI Platform</span>
+        </div>
+        <div className="topnav">{NAV.map(([p,l])=><button key={p} className={`tnav ${page===p?"on":""}`} onClick={()=>go(p)}>{l}</button>)}</div>
+        <div className="nav-right">
+          <div className="cur-badge">{currency.code} {currency.symbol}</div>
+          <button className="nav-cta" onClick={()=>go("PLANS")}>Get Premium</button>
+        </div>
+      </nav>
+
+      {/* HOME */}
+      {page==="HOME"&&(
+        <>
+          <section className="hero">
+            <div style={{position:"relative",zIndex:1,maxWidth:780,margin:"0 auto"}}>
+              <div className="hero-eyebrow fu">✦ Powered by FLUX AI — Your Own Intelligent Assistant</div>
+              <h1 className="hero-h1 fu d1">Describe Any Problem.<br/><span className="c1">FLUX AI Diagnoses.</span><br/><span className="c2">You Get the Fix.</span></h1>
+              <p className="hero-p fu d2">Home repairs · Electrical faults · Industrial PLC · WiFi issues · Email writing · Excel help · TPM knowledge — all in one platform, worldwide.</p>
+              <div className="hero-search-wrap fu d3">
+                <input className="hero-search" placeholder="Ask FLUX AI anything — e.g. 'MCB tripping', 'Write a complaint email', 'OEE calculation'..." onKeyDown={e=>{if(e.key==="Enter"){go("AI");}}}/>
+                <button className="hero-go" onClick={()=>go("DIAGNOSE")}>Diagnose →</button>
+              </div>
+              <div className="cat-pills fu d4">{CATS.map(c=><div key={c.id} className={`cat-pill ${cat===c.id?"on":""}`} onClick={()=>{setCat(c.id);go("DIAGNOSE");}}>{c.e} {c.label}</div>)}</div>
+              <div className="trust-row fu d4">
+                {[["✅","Free to use"],["✦","FLUX AI — our own"],["🌍","Worldwide"],["🔒","No login needed"],["📱","Mobile friendly"]].map(([e,l])=><div key={l} className="trust-it">{e} <strong>{l}</strong></div>)}
+              </div>
+            </div>
+          </section>
+
+          <div className="pw">
+            {/* Skills showcase */}
+            <div style={{marginBottom:40}}>
+              <div className="sec-ey">What FLUX AI Can Do</div>
+              <h2 className="sec-t">12 Powerful Skills Built In</h2>
+              <p className="sec-s" style={{marginBottom:20}}>FLUX AI is not just a chatbot — it has specialist skills for work, industry, home, and productivity.</p>
+              <div className="skill-grid">
+                {SKILLS.map(s=>(
+                  <div key={s.name} className={`skill-card ${s.color}`}>
+                    <div className="sk-icon">{s.icon}</div>
+                    <div className="sk-name">{s.name}</div>
+                    <div className="sk-desc">{s.desc}</div>
+                    <div className="sk-tags">{s.tags.map(t=><span key={t} className="sk-tag">{t}</span>)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="ad-slot"><div className="ad-lbl">Advertisement — Google AdSense</div><div className="ad-desc">728×90 leaderboard — earns per impression & click</div></div>
+            {/* Calculators preview */}
+            <div style={{marginBottom:40}}>
+              <div className="sec-ey">Free Tools</div>
+              <h2 className="sec-t">12 Engineering Calculators</h2>
+              <div className="tools-grid" style={{marginTop:16}}>
+                {CALC_LIST.map(t=><div key={t.id} className="tool-card" onClick={()=>{setCalcId(t.id);go("TOOLS");}}>
+                  <span className="tc-em">{t.e}</span><div className="tc-n">{t.n}</div><div className="tc-d">{t.d}</div>
+                  <span className="tc-b" style={{background:`${t.bc}18`,color:t.bc}}>{t.b}</span>
+                </div>)}
+              </div>
+            </div>
+            {/* Revenue model */}
+            <div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:16,padding:26,marginBottom:40}}>
+              <div className="sec-ey">Revenue</div>
+              <h2 className="sec-t">How fluxdigitals.in Earns</h2>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:11,marginTop:16}}>
+                {[["📢","Google AdSense","Ads on every page","₹2–20/1000 views"],["💎","Premium Plans","Engineer & Enterprise","₹499–1,999/month"],["🛒","Affiliates","Equipment & tools","5–15% commission"],["📧","Lead Generation","Connect to vendors","₹50–500/lead"],["🎓","Online Courses","TPM, Lean, PLC","₹999–4,999/course"],["🤝","Sponsored Content","Industry partners","₹5,000–50,000/post"]].map(([e,t,d,earn])=>(
+                  <div key={t} style={{background:"#f5f7fc",border:"1.5px solid var(--line)",borderRadius:10,padding:15}}>
+                    <div style={{fontSize:"1.4rem",marginBottom:8}}>{e}</div>
+                    <div style={{fontWeight:800,fontSize:".88rem",color:"#0a0d14",marginBottom:3}}>{t}</div>
+                    <div style={{fontSize:".76rem",color:"#3a4055",lineHeight:1.55,marginBottom:7}}>{d}</div>
+                    <div style={{fontSize:".7rem",fontWeight:700,color:"#059669",background:"#ecfdf5",padding:"2px 8px",borderRadius:99,display:"inline-flex"}}>{earn}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* AI CHAT */}
+      {page==="AI"&&(
+        <div className="pw" style={{maxWidth:900}}>
+          <div style={{marginBottom:18}}><div className="sec-ey">FLUX AI — Your Intelligent Assistant</div><h2 className="sec-t">Chat with FLUX AI</h2><p className="sec-s">Ask anything. FLUX AI has specialist knowledge for industrial, home, office, TPM, email writing, Excel help and more.</p></div>
+          <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:14}}>{CATS.map(c=><button key={c.id} onClick={()=>setCat(c.id)} style={{padding:"6px 13px",borderRadius:99,border:"1.5px solid",borderColor:cat===c.id?c.c:"#e0e5f0",background:cat===c.id?`${c.c}14`:"#f5f7fc",color:cat===c.id?c.c:"#3a4055",fontSize:".78rem",fontWeight:600,cursor:"pointer"}}>{c.e} {c.label}</button>)}</div>
+          <FluxChat cat={cat}/>
+          <div className="ad-slot" style={{marginTop:18}}><div className="ad-lbl">Advertisement</div><div className="ad-desc">High-engagement page — great AdSense placement</div></div>
+        </div>
+      )}
+
+      {/* DIAGNOSE */}
+      {page==="DIAGNOSE"&&(
+        <div className="pw" style={{maxWidth:960}}>
+          <div style={{marginBottom:18}}><div className="sec-ey">AI Problem Diagnosis</div><h2 className="sec-t">Get Your Free Diagnosis Report</h2><p className="sec-s">Upload a photo, file, or type your problem — FLUX AI gives a professional diagnosis with root cause, step-by-step fix, 5-Why analysis and safety notes.</p></div>
+          <DiagnoseTool/>
+          <div style={{marginTop:18}}><div style={{fontWeight:700,fontSize:".86rem",color:"#3a4055",marginBottom:11}}>💬 Or chat directly with FLUX AI:</div><FluxChat cat={cat}/></div>
+        </div>
+      )}
+
+      {/* TOOLS */}
+      {page==="TOOLS"&&(
+        <div className="pw">
+          <div style={{marginBottom:18}}><div className="sec-ey">12 Free Calculators</div><h2 className="sec-t">Engineering & Home Calculators</h2></div>
+          <div style={{display:"grid",gridTemplateColumns:"240px 1fr",gap:14}}>
+            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+              {CALC_LIST.map(c=><div key={c.id} onClick={()=>setCalcId(c.id)} style={{display:"flex",alignItems:"center",gap:9,padding:"9px 11px",borderRadius:9,border:"1.5px solid",borderColor:calcId===c.id?"#1d4ed8":"#e0e5f0",background:calcId===c.id?"#eff6ff":"#fff",cursor:"pointer",transition:"all .15s",boxShadow:"var(--sh)"}}>
+                <span style={{fontSize:"1.15rem"}}>{c.e}</span>
+                <div><div style={{fontWeight:700,fontSize:".82rem",color:calcId===c.id?"#1d4ed8":"#0a0d14"}}>{c.n}</div><div style={{fontSize:".68rem",color:"#8590a6"}}>{c.d}</div></div>
+              </div>)}
+            </div>
+            <div style={{background:"#fff",border:"1.5px solid var(--line)",borderRadius:12,padding:22,boxShadow:"0 1px 3px rgba(10,13,20,.07)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                <span style={{fontSize:"1.4rem"}}>{CALC_LIST.find(c=>c.id===calcId)?.e}</span>
+                <div><div style={{fontFamily:"Sora, sans-serif",fontWeight:800,fontSize:"1.05rem",color:"#0a0d14"}}>{CALC_LIST.find(c=>c.id===calcId)?.n}</div><div style={{fontSize:".78rem",color:"#8590a6"}}>{CALC_LIST.find(c=>c.id===calcId)?.d}</div></div>
+              </div>
+              <CalcPanel id={calcId}/>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PM */}
+      {page==="PM"&&(
+        <div className="pw" style={{maxWidth:820}}>
+          <div style={{marginBottom:18}}><div className="sec-ey">Preventive Maintenance</div><h2 className="sec-t">PM Checklists</h2><p className="sec-s">Daily, weekly, monthly checklists. AI generates custom checklists for any machine instantly.</p></div>
+          <PMModule/>
+        </div>
+      )}
+
+      {/* EMAIL */}
+      {page==="EMAIL"&&(
+        <div className="pw">
+          <div style={{marginBottom:18}}><div className="sec-ey">AI Writing Tools</div><h2 className="sec-t">Email Writer & Corrector</h2><p className="sec-s">Write professional emails in any tone. Correct your existing emails. 12 email types including weekly reports, job applications, maintenance requests.</p></div>
+          <EmailWriter/>
+        </div>
+      )}
+
+      {/* TPM */}
+      {page==="TPM"&&(
+        <div className="pw" style={{maxWidth:960}}>
+          <div style={{marginBottom:18}}><div className="sec-ey">TPM & Lean Manufacturing</div><h2 className="sec-t">TPM Knowledge Base</h2><p className="sec-s">Complete guide — 8 Pillars, OEE, 5S, Kaizen, SMED, FMEA, RCM, Value Stream Mapping, KPIs and real factory examples.</p></div>
+          <TPMKnowledge/>
+        </div>
+      )}
+
+      {/* PLANS */}
+      {page==="PLANS"&&(
+        <div className="pw">
+          <div style={{textAlign:"center",marginBottom:36}}>
+            <div className="sec-ey">Pricing</div>
+            <h2 className="sec-t">Simple, Honest Pricing</h2>
+            <p className="sec-s" style={{margin:"0 auto"}}>Free forever for basic use. Upgrade for unlimited FLUX AI, all tools, and advanced features.</p>
+          </div>
+          <div className="price-grid">
+            {PLANS.map(p=>(
+              <div key={p.tier} className={`price-card ${p.pop?"pop":""}`}>
+                {p.pop&&<div className="pop-badge">⭐ MOST POPULAR</div>}
+                <div className="p-tier">{p.tier}</div>
+                <div><span className="p-amt">{fmt(p.inr)}</span>{p.inr>0&&<span className="p-per"> /month</span>}</div>
+                {currency.code!=="INR"&&p.inr>0&&<div className="p-orig">≈ ₹{p.inr.toLocaleString()} INR/month</div>}
+                <div className="p-desc">{p.desc}</div>
+                {p.feats.map(f=><div key={f} className="p-feat">{f}</div>)}
+                {p.inr===0
+                  ?<button className="btn btn-blue" style={{width:"100%",justifyContent:"center",marginTop:18,padding:"12px"}} onClick={()=>go("DIAGNOSE")}>Start Free — No Card</button>
+                  :<div style={{marginTop:18}}>
+                    <button className="btn btn-blue" style={{width:"100%",justifyContent:"center",padding:"12px"}} onClick={()=>{if(window.Razorpay){new window.Razorpay({key:"YOUR_RAZORPAY_KEY",amount:p.inr*100,currency:"INR",name:"Flux Digital",description:`${p.tier} Plan`,theme:{color:"#1d4ed8"},method:{upi:true,card:true,netbanking:true,wallet:true}}).open();}else{alert("To enable payments:\n1. Sign up free at razorpay.com\n2. Replace YOUR_RAZORPAY_KEY with your key\n3. GPay, UPI, Cards all work automatically!\n\nMoney goes directly to your bank account.");}}}>
+                      💳 Pay {fmt(p.inr)} — Subscribe
+                    </button>
+                    <div className="pay-methods">
+                      {["GPay","PhonePe","UPI","Visa","Mastercard","NetBanking"].map(m=><span key={m} className="pay-m">{m}</span>)}
+                    </div>
+                    <div style={{fontSize:".68rem",color:"#8590a6",textAlign:"center",marginTop:5}}>🔒 Secure via Razorpay → Direct to your bank/GPay</div>
+                  </div>
+                }
+              </div>
+            ))}
+          </div>
+          <div className="ad-slot" style={{marginTop:28}}><div className="ad-lbl">Sponsored Products & Affiliate Links</div><div className="ad-desc">Industrial tools, equipment, software — affiliate products earn 5–15% commission per sale</div></div>
+        </div>
+      )}
+
+      <footer style={{background:"#0a0d14",padding:"36px 20px 22px",marginTop:56}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:28,marginBottom:28}}>
+            <div>
+              <div style={{fontFamily:"Sora, sans-serif",fontSize:"1.1rem",fontWeight:800,color:"#fff",marginBottom:8}}>✦ FLUX DIGITAL</div>
+              <div style={{fontSize:".8rem",color:"#64748b",lineHeight:1.7}}>India's most useful AI platform. FLUX AI helps with home repairs, electrical, industrial automation, email writing, Excel, TPM, and more. Free for everyone worldwide.</div>
+            </div>
+            {[["FLUX AI Skills",["Problem Diagnosis","Email Writer","TPM Knowledge","PM Checklists","12 Calculators","Work Automation"]],["Problem Types",["Electrical Faults","Plumbing Issues","WiFi & Internet","Industrial PLC","EB Meter Help","Home Repair"]],["Company",["About fluxdigitals.in","Pricing Plans","Advertise With Us","Privacy Policy","Contact Us","Terms of Use"]]].map(([h,ls])=>(
+              <div key={h}>
+                <div style={{fontSize:".65rem",fontWeight:800,textTransform:"uppercase",letterSpacing:".1em",color:"#e2e8f0",marginBottom:10}}>{h}</div>
+                {ls.map(l=><div key={l} style={{fontSize:".8rem",color:"#64748b",marginBottom:6,cursor:"pointer"}} onClick={()=>go(l.includes("Calc")?"TOOLS":l.includes("Diag")||l.includes("PM")?"PM":l.includes("Email")?"EMAIL":l.includes("TPM")?"TPM":l.includes("Pric")?"PLANS":"HOME")}>{l}</div>)}
+              </div>
+            ))}
+          </div>
+          <div style={{borderTop:"1px solid #1e293b",paddingTop:18,display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:7,fontSize:".76rem",color:"#64748b"}}>
+            <span>© 2025 Flux Digital — fluxdigitals.in · All rights reserved</span>
+            <span>✦ Powered by FLUX AI — Built for the world</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
